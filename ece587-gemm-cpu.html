@@ -1,0 +1,105 @@
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="course.css">
+<title>ECE 587 Spring 2026 - GEMM Project 2</title>
+</head>
+<body>
+
+<center>
+<h1>ECE 587 Spring 2026</h1>
+<h1>GEMM Project 2 - CPU Optimizations</h1>
+<hr>
+<br>Report Due: 03/08 (Sun.), by the end of the day (Chicago time)
+<br>Late submissions will NOT be graded
+</center>
+
+<hr><a name="objective" class="section">
+I. Objective</a>
+
+<p>
+In Project 1, we established a single-core baseline for General Matrix Multiplication (GEMM).
+In this project, we take the next step to leverage OpenMP to utilize the computation
+and communication resources available from multiple CPU cores, and to explore
+how memory tiling can further improve performance by optimizing communication patterns.
+</p>
+
+<p>
+We rely on the same project setup Project 1 for VM and VS Code.
+Please refer to Sections II and III in Project 1 instructions for details.
+</span>
+</p>
+
+<hr><a name="cpu" class="section">
+II. CPU Optimizations</a>
+
+<p>
+Our updated C++ code for this project is available here on Github
+<a href="https://github.com/wngjia/ece587-gemm/blob/main/gemm_tiled.cpp">gemm_tiled.cpp</a>.
+This is the same Github repository as Project 1 and you may use git to clone it,
+or download and upload the C++ file.
+The code has the same structure as Project 1, but with some additions to support OpenMP and tiling.
+Your job is to add OpenMP, tune tile size, and explain what you observe.
+</p>
+
+<p>
+First of all, similar to Project 1, please update the code to include your CWID.
+Without making any further change, build and run 'gemm_tiled' to confirm that
+the code works with your CWID in the output.
+<pre class="console">
+ubuntu@ubuntu24:~$ g++ -O3 -march=native -fopenmp -std=c++17 gemm_tiled.cpp -o gemm_tiled
+
+ubuntu@ubuntu24:~$ OMP_NUM_THREADS=4 ./gemm_tiled 1024 128
+CWID A12345678 1771013167 N = 1024, M = 128, 4 MiB per matrix
+OMP_NUM_THREADS = 4
+CWID A12345678 1771013167 gemm_ikj : min 89.279 ms, avg 90.262 ms, max 91.864 ms
+CWID A12345678 1771013168 gemm_tiled : min 88.625 ms, avg 90.005 ms, max 92.619 ms
+CWID A12345678 1771013168 sums: min 10144.978, max 10145.179, passed
+</pre>
+Compared to the 'gemm' program from Project 1, the 'gemm_tiled' program takes
+one additional argument for tile size M.
+On the other hand, we will set 'OMP_NUM_THREADS=4' throughout the project
+to use the 4 cores available on our VM.
+You may experiment with additional cores if you have access to a more powerful computer
+to have a better understanding of how performance scales with cores.
+</p>
+
+<p>
+Here is what you need to do in this project.
+Based on these two GEMM implementations 'gemm_ikj()' and 'gemm_tiled()' in the C++ code,
+you should implement 'gemm_ikj_omp()' and 'gemm_tiled_omp()'
+to add OpenMP parallelizations, respectively.
+Don't forget to modify 'main()' to call these new functions to report their performance.
+Run the program with matrix sizes of 1024, 2048, 4096, 8192,
+and tile sizes of 16, 32, 64, 128.
+Collect data from the output.
+Nevertheless, feel free to structure your code and experiments as you see fit,
+e.g. to introduce loops in 'main()' to automate runs for different N and M values,
+but make sure to validate your results and collect data as needed.
+</p>
+
+<hr><a name="deliverables" class="section">
+III. Project Deliverables</a>
+
+<p>
+Submit a project report in .doc/.docs or .pdf format
+to Canvas before the deadline for a total of 15 points.
+Your project report should include the following.
+<ul>
+<li>(3 points)
+Show your implementation adding OpenMP to the two functions
+and your updates to the 'main' function. Discuss any difficulty you have met.
+If you use an AI assistant to generate the code, discuss the prompts used.
+</li>
+<li>(9 points)
+Organize the results by tables to compare running times, multicore speedups, and GFLOPS.
+Visualize the trends and discuss the results.
+</li>
+<li>(3 points)
+Include screenshots of the 'gemm_tiled' outputs for different matrix and tile sizes.
+Make sure your CWID is clearly shown in the screenshots.
+</li>
+</ul>
+</p>
+
+</body>
+</html>
