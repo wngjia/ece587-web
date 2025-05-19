@@ -1,0 +1,234 @@
+<html>
+  <link rel="stylesheet" type="text/css" href="course.css">
+  <head><title>ECE 587 Summer 2025 RISC-V Prototyping II</title></head>
+
+  <body>
+    
+<center>
+<h1>ECE 587 Summer 2025</h1>
+<h1>RISC-V Prototyping II - Performance Evaluation and Modeling</h1>
+<hr>
+<br>Report Due: 06/22 (Sun.), by the end of the day (Chicago time)
+<br>Late submissions will NOT be graded
+</center>
+
+<hr><a name="objective" class="section">
+I. Objective</a>
+
+<p>
+In this project, you will be introduced to the RISC-V ecosystem in Chipyard
+and use simulation tools to evaluate and model system performance
+without the need to access an actual RISC-V chip.
+You will also learn the skills to navigate through complex open-source projects
+and to focus and work on the parts that you may be interested into.
+</p>
+
+<hr><a name="helloworld" class="section">
+II. Hello World!</a>
+
+<p>
+We would like to start with a simple program that prints "Hello World!".
+Instead of running the program on our host system,
+this Hello World program should run on a RISC-V SoC,
+consisting of RISC-V processors and hardware accelerators
+to accelerate certain applications.
+From the perspective of hardware-software co-design, it is preferable
+to simulate them instead of having actual chips as we will be able to
+optimize chip configurations and design parameters based on performance evaluations.
+The Chipyard framework, together with the open-source RISC-V processor and
+accelerator designs, provides us with such an environment for simulation.
+</p>
+
+<p>
+Our Chipyard setup from the previous project includes a RISC-V SoC
+with RISC-V cores and the Gemmini accelerator.
+Indeed, <a href="https://github.com/wngjia/ece587">our provisioning script</a>
+recorded the steps to set up the SoC following the Quick Start
+section of the <a href="https://github.com/ucb-bar/gemmini">Gemmini GitHub page</a>.
+Please spend time read this Quick Start section as it provides
+a lot of information on writing your own program and running simulations.
+Most importantly, it mentions the directory
+'chipyard/generators/gemmini/software/gemmini-rocc-tests'
+for Gemmini software running on the RISC-V SoC.
+</p>
+
+<p>
+Open VS Code and connect to the virtual machine or your Ubuntu server.
+You can use the Explorer panel on the left to navigate to the directory.
+There are a few subdirectories containing source code for a wide range of applications
+from C program examples to complex neural network models.
+We are interested in the subdirectory 'bareMetalC' as programs
+there can run directly on the RISC-V SoC without OS support.
+Open and read 'template.c' -- ignoring all the details,
+it is just like any other C programs that start from the main function
+and use printf to generate outputs.
+Indeed, this is the source code of the template program that we
+run to test our Chipyard setup.
+</p>
+
+<p>
+We are going to implement the Hello World program using 'template.c' as a template.
+Make a copy of 'template.c' into 'helloworld.c', remove everything in the main function
+(don't touch those #include lines before the main function),
+then add printf("Hello World!\n") into main.
+<pre class="console">
+...
+int main() {
+  printf("Hello World\n");
+}
+</pre>
+</p>
+
+<p>
+The RISC-V SoC won't understand C so we need to compile 'helloworld.c'
+into a program of RISC-V machine code via cross-compilation.
+The Quick Start section mentions that the script 'build.sh'
+is used for cross-compilation from the directory
+'chipyard/generators/gemmini/software/gemmini-rocc-tests'.
+Moreover, like most other C projects, build scripts use Makefile
+to decide what exact to build.
+Therefore, we will need to let the script know our program
+by modifying the file 'Makefile' in the subdirectory 'bareMetalC'
+to include 'helloworld.c'.
+Open 'Makefile' and you will see a list of tests at the beginning.
+You will find the line "template \" for the template program at the end of the list.
+Add a line immediately below following the same pattern as "helloworld \"
+for 'helloworld.c'.
+<span class="emph">Make sure to use Tab instead of spaces for the indentation.</span>
+<pre class="console">
+...
+	gemmini_counter \
+	template \
+	helloworld \
+
+tests_baremetal = $(tests:=-baremetal)
+...
+</pre>
+</p>
+
+<p>
+Open a terminal in VS Code, initialize Chipyard environment
+and go to the directory 'chipyard/generators/gemmini'.
+We are ready to build the Hello World program.
+<pre class="console">
+ubuntu@ubuntu:~$ source chipyard/env.sh 
+... ubuntu@ubuntu:~$ cd chipyard/generators/gemmini
+... ubuntu@ubuntu:~/chipyard/generators/gemmini$ pushd software/gemmini-rocc-tests; ./build.sh; popd
+...
+~/chipyard/generators/gemmini
+</pre>
+Note that we stay in 'chipyard/generators/gemmini'
+instead of 'chipyard/generators/gemmini/software/gemmini-rocc-tests'
+to make it easier to run the simulators afterwards.
+We therefore need to use pushd/popd commands to move between these directories.
+</p>
+
+<p>
+You will need to remember to build the program again after making any change
+to the source code 'helloworld.c'.
+Once the program it built, we can run it with the Spike simulator.
+<pre class="console">
+... ubuntu@ubuntu:~/chipyard/generators/gemmini$ ./scripts/run-spike.sh helloworld
+Hello World!
+</pre>
+</p>
+
+<hr><a name="model" class="section">
+III. Performance Evaluation and Modeling with Spike</a>
+
+<p>
+We would like to explore further than just printing "Hello World!".
+How many cycles are needed to execute that printf function?
+To access the number of cycles executed so far,
+there is a RISC-V instruction 'rdcycle' -- the number of cycles
+can be computed as the difference between two 'rdcycle' invocations
+before and after the printf.
+Even better, Gemmini provides access to 'rdcycle' via the function read_cycles
+so that we don't need to learn writing assembly code in our C program.
+Check 'conv.c' if you would like to see an example for calling read_cycles.
+</p>
+
+<p>
+The measurement of cycles for printing "Hello World!" may help us to
+predict the cycles needed to print other strings without actually
+simulate them in the Spike simulator, possibly with additional measurements
+using strings like "Hello" and "0123456789".
+Indeed, this is the first step of back annotation where we are building
+a performance model of the printf function by evaluating it with a choosen
+set of inputs.
+</p>
+
+<p>
+Here is what you need to do/answer for this section.
+You may need to perform additional searches online.
+  <ul>
+  <li>Modify your 'helloworld.c' to measure and report the number
+  of cycles used by printf("Hello World!\n"). How many cycles are used?</li>
+  <li>Try print strings that are shorter or longer and measure the number of cycles.
+  Are the numbers of cycles proportional to the lengths of the strings?
+  Reason with your findings.</li>
+  <li>Come up with a performance model for the printf function for simple strings
+  (no need to consider formats like %d). I would suggest
+  to start with a linear model like "number_of_cycles = setup_cycles+cycles_per_char*string_length"
+  where "setup_cycles" and "cycles_per_char" are constants obtained from your measurements
+  independent from the inputs. You may need to modify this model to incorporate your findings.
+  </ul>
+</p>
+
+<hr><a name="verilator" class="section">
+IV. Cycle-Accurate Simulation with Verilator</a>
+
+<p>
+Spike is not able to provide cycle-accurate performance evaluations
+since it is not able to consider RTL implementations of the RISC-V SoC.
+To obtain cycle-accurate performance evaluations,
+we will need both the RTL implementation and a RTL simulator.
+Our Chipyard setup process has already generated the RTL implementation
+in Verilog from a default configuration, and created a Verilator simulator
+that is able to simulate the Verilog design with RISC-V programs as workloads.
+</p>
+
+<p>
+To run our Hello World program with the Verilator simulator,
+first make sure you have initialized Chipyard environment
+and are in the directory 'chipyard/generators/gemmini'.
+Then, it is very similar to that of running the Spike simulator.
+<pre class="console">
+... ubuntu@ubuntu:~/chipyard/generators/gemmini$ ./scripts/run-verilator.sh helloworld
+Hello World!
+</pre>
+Note that it may take much longer to complete the simulation
+compared to that of Spike, since Verilator has to simulate the 0s and 1s
+in the Verilog design.
+Also note that there is no need to build the program again
+unless you have changed 'helloworld.c'.
+</p>
+
+<p>
+Here is what you need to do/answer for this section.
+You may need to perform additional searches online.
+  <ul>
+  <li>Experiment with your Hello World program that can output cycles for printf.
+  Do you obtain the same cycle counts as the Spike simulations?
+  Why both the Spike simulator and the Verilator simulator
+  can execute the same Hello World program but report different cycles?
+  </li>
+  <li>
+  Use your experience obtaining the performance model for printf on Spike
+  to create a performance model for printf on Verilator.
+  </li>
+  </ul>
+</p>
+
+<hr><a name="report" class="section">
+V. Project Deliverables</a>
+
+<p>
+Complete the tasks for Section III (5 points) and IV (5 points).
+Write a project report in .doc/.docs or .pdf format,
+include screenshots as need,
+and submit it to Canvas before the deadline.
+</p>
+
+  </body>
+</html>
