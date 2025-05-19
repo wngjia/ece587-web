@@ -1,0 +1,32 @@
+.title {
+    font-size: 2em;
+    font-weight:bold;
+}
+
+.section {
+    font-size: 1.5em;
+    font-weight:bold;
+}
+
+.subsection {
+    font-size: 1em;
+    font-weight:bold;
+}
+
+.console {
+    font-family: Mono-space;
+    padding: 10px;
+    color:White;
+    background-color:Black;
+    border-style:solid;
+}
+
+.command {
+    font-family: Mono-space;
+    font-weight: bold;
+}
+
+.emph {
+    color: red;
+    font-weight: bold;
+}
