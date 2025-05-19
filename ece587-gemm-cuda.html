@@ -1,0 +1,191 @@
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="course.css">
+<title>ECE 587 Spring 2026 - GEMM Project 3</title>
+</head>
+<body>
+
+<center>
+<h1>ECE 587 Spring 2026</h1>
+<h1>GEMM Project 3 - CUDA Optimizations</h1>
+<hr>
+<br>Report Due: 04/12 (Sun.), by the end of the day (Chicago time)
+<br>Late submissions will NOT be graded
+</center>
+
+<hr><a name="objective" class="section">
+I. Objective</a>
+
+<p>
+In Project 1 and 2, we established CPU baselines for General Matrix
+Multiplication (GEMM) and explored optimizations using loop ordering, OpenMP,
+and tiling. In this project, we move to CUDA and study how to increase data
+reuse inside a tiled GPU kernel.
+</p>
+
+<hr><a name="colab" class="section">
+II. CUDA Development on Google Colab</a>
+
+<p>
+Our CUDA sample code for this project is available here on Github
+<a href="https://github.com/wngjia/ece587-gemm/blob/main/gemm_cuda.cu">gemm_cuda.cu</a>.
+You may also use the Colab notebook
+<a href="https://colab.research.google.com/drive/1zOY2kqplLWOBsJsh-7FWtTpJTw0D3C00">here</a>.
+Please use either version as you see fit.
+</p>
+
+<p>
+First of all, similar to Project 1 and Project 2, please update the code to
+include your CWID. Without making any further change to the code,
+build and run the program as follows so that you can confirm CUDA works
+properly and your CWID appears in the output.
+</p>
+
+<p>
+Google Colab provides a convenient way to develop and run CUDA code without
+acquiring CUDA hardware and installing CUDA software on your own computer.
+Please follow the steps below to setup your environment for this project.
+</p>
+
+<ol>
+<li>
+Use or create a Google account so that you can access
+<a href="https://colab.research.google.com/">Google Colab</a> for free.
+</li>
+<li>
+Open the notebook and click 'Connect' at the top of the page.
+Make sure you are using a Python 3 runtime with a T4 GPU.
+</li>
+</ol>
+<p align=center><img src="colab.png" width="1024"></img></p>
+<ol start="3">
+<li>
+Click 'Terminal' at the bottom of the page to open a terminal window.
+In the terminal, run 'nvidia-smi' and then 'nvcc --version'
+to validate CUDA availability.
+<span class="emph">
+The CUDA version reported by nvidia-smi should be the same as
+or higher than that of nvcc. Otherwise, you will need to add
+'-arch=sm_75' to nvcc when building the programs.
+</span>
+<pre class="console">
+/content# nvidia-smi
+...
+| NVIDIA-SMI 580.82.07              Driver Version: 580.82.07      CUDA Version: 13.0     |
+...
+/content# nvcc --version
+nvcc: NVIDIA (R) Cuda compiler driver
+Copyright (c) 2005-2025 NVIDIA Corporation
+Built on Fri_Feb_21_20:23:50_PST_2025
+Cuda compilation tools, release 12.8, V12.8.93
+Build cuda_12.8.r12.8/compiler.35583870_0
+</pre>
+</li>
+<li>
+Create a notebook cell starting with "%%writefile gemm_cuda.cu" and
+copy your source code inside.
+Running the cell will write the source code into the file
+specified by the first line.
+Now run 'ls' in the terminal to confirm that the file is there.
+</li>
+</ol>
+<p align=center><img src="save_file.png" width="1024"></img></p>
+<ol start="5">
+<li>
+Build the programs in the terminal and run them from there.
+<pre class="console">
+/content# nvcc -O2 gemm_cuda.cu -o gemm_cuda
+...
+/content# ./gemm_cuda 8192 32
+CWID A12345678 1774383772 N = 8192, M = 32, 256 MiB per matrix
+CWID A12345678 1774383779 gemm_tiled : min 1635.271 ms, avg 1710.232 ms, max 1856.612 ms
+CWID A12345678 1774383779 gemm_tiled_2x2 : min 1.222 ms, avg 1.224 ms, max 1.225 ms
+CWID A12345678 1774383779 sums: min -264050.719, max 0.000, failed
+</pre>
+Don't worry about the compiler warnings and the last line showing 'failed'.
+Your goal of this project is to make it pass as discussed in the next section.
+</li>
+</ol>
+
+<hr><a name="cuda" class="section">
+III. CUDA Kernel Optimizations</a>
+
+<p>
+Please review <a href="ece587-lec19.pdf">Lecture 19</a> and the associated
+notebook
+<a href="https://colab.research.google.com/drive/1HZGmiaFSK3BVz307FNURHtV9rJurv3jC">ece587-lec19-lec20.ipynb</a>.
+The key idea is to study the tiled CUDA kernel carefully and then implement
+the '2x2' optimization in 'gemm_tiled_2x2' as indicated by the
+'TODO' comments in the code provided.
+</p>
+
+<p>
+Here are a few hints for the implementation.
+<ul>
+<li>
+You are not supposed to change the kernel launching code.
+</li>
+<li>
+Each block of M by M threads now works on a 2M by 2M tile of the matrices A, B, and C.
+</li>
+<li>
+Each thread loads 4 elements from A and 4 from B,
+and the shared memory has a size of 8*M*M,
+i.e. a 2M by 2M tile for each of A and B.
+</li>
+<li>
+Each thread computes 4 elements of C
+and keeps them in 4 registers.
+</li>
+<li>
+In the inner loop, each thread reads 2 elements a0 and a1 from tile A and
+2 elements b0 and b1 from tile B into 4 registers, and then updates the
+4 elements of C with a0*b0, a0*b1, a1*b0, and a1*b1.
+</li>
+</ul>
+</p>
+
+<p>
+Run the program with matrix sizes of 4096, 8192, 16384,
+and tile sizes of 8, 16, 32, 64. Collect data from the output.
+Feel free to structure your code and experiments as you see fit,
+e.g. to introduce loops in 'main()' to automate runs
+for different N and M values,
+but make sure to validate your results and collect data as needed.
+</p>
+
+<hr><a name="deliverables" class="section">
+IV. Project Deliverables</a>
+
+<p>
+Submit a project report in .doc/.docs or .pdf format
+to Canvas before the deadline for a total of 15 points.
+Your project report should include the following.
+<ul>
+<li>(5 points)
+Show your implementation of 'gemm_tiled_2x2'.
+Explain what changed compared to 'gemm_tiled_1x2' from Lecture 19
+and discuss any difficulty you met.
+If you use an AI assistant to generate the code,
+discuss the prompts used.
+</li>
+<li>(7 points)
+Organize the results by tables to compare running times and GFLOPS
+between 'gemm_tiled' and 'gemm_tiled_2x2'.
+Visualize the trends and discuss the results.
+Discuss whether the 2x2 version improves performance and why.
+In particular, are you expecting 'gemm_tiled' to have better performance
+compared to itself when the tile size increases from 32 to 64?
+What really happens? How is this related to 'gemm_tiled_2x2'
+with a tile size of 32?
+</li>
+<li>(3 points)
+Include screenshots of your program outputs
+for different matrix and tile sizes.
+Make sure your CWID is clearly shown in the screenshots.
+</li>
+</ul>
+</p>
+
+</body>
+</html>
