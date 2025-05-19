@@ -1,0 +1,124 @@
+<html>
+  <link rel="stylesheet" type="text/css" href="course.css">
+  <head><title>ECE 587 Summer 2025 RISC-V Prototyping III</title></head>
+
+  <body>
+
+<center>
+<h1>ECE 587 Summer 2025</h1>
+<h1>RISC-V Prototyping III - Gemmini</h1>
+<hr>
+<br>Report Due: 07/27 (Sun.), by the end of the day (Chicago time)
+<br>Late submissions will NOT be graded
+</center>
+
+<hr><a name="objective" class="section">
+I. Objective</a>
+
+<p>
+In this project, you will be introduced to the Gemmini accelerator.
+As a RoCC (RISC-V Custom Coprocessor) accelerator,
+Gemmini executes custom instructions sent by the RISC-V processor,
+and accelerates matrix multiplication with a systolic array.
+Although these instructions provide full potential to optimize
+computations, they are quite complicated as we will need to
+coordinate the data movement between the main memory (L2 cache actually)
+and the Gemmini scratchpad and accumulator SRAM, as well as
+to feed the systolic array.
+</p>
+
+<p>
+For this project we will focus on the helper functions defined by the Gemmini software,
+in particular tiled_matmul_auto that takes care of moving matrices
+into Gemmini, performing multiplication, moving out the results.
+</p>
+
+<hr><a name="gemmini" class="section">
+II. Gemmini</a>
+
+
+<p>
+Since Gemmini makes heavy use of the Chipyard framework,
+we will need to initialize Chipyard environment
+and go to the directory 'chipyard/generators/gemmini'
+using a terminal in VS Code.
+<pre class="console">
+ubuntu@ubuntu:~$ source chipyard/env.sh 
+... ubuntu@ubuntu:~$ cd chipyard/generators/gemmini
+... ubuntu@ubuntu:~/chipyard/generators/gemmini$ pushd software/gemmini-rocc-tests; ./build.sh; popd
+...
+~/chipyard/generators/gemmini
+</pre>
+Make sure to stay in 'chipyard/generators/gemmini' and
+use pushd/popd commands to move between these directories when necessary.
+<span class="emph">In particular, don't forget to run
+"pushd software/gemmini-rocc-tests; ./build.sh; popd"
+if you have modified a program.</span>
+</p>
+
+<p>
+It is very convenient to use VS Code to browse the programs in
+'chipyard/generators/gemmini/software/gemmini-rocc-tests/bareMetalC'.
+Quite a few of them demonstrates how to use tiled_matmul_auto in different ways.
+Let's focus on 'tiled_matmul_ws.c' where the weight-stationary
+dataflow is used. Read this file and run Spike simulation to
+understand the structure of the code.
+<pre class="console">
+... ubuntu@ubuntu:~/chipyard/generators/gemmini$ ./scripts/run-spike.sh tiled_matmul_ws
+MAT_DIM_I: 64
+MAT_DIM_J: 64
+MAT_DIM_K: 64
+Gemmini extension configured with:
+    dim = 16
+Starting slow CPU matmul
+Cycles taken: 2130523
+Starting gemmini matmul
+Cycles taken: 96
+</pre>
+</p>
+
+<p>
+The huge number of cycles required to compute the matrix multiplication
+using CPU simply means Verilator simulation will take too much time to complete.
+On the other hand, the 96 cycles required to complete the computation
+in Gemmini seems too good to be true (Why? We'll come back to this).
+Turn off CPU computation by changing the line '#define CHECK_RESULT 1'
+into '#define CHECK_RESULT 0'. Rebuild the program and run Verilator
+simulation to get the actual number of cycles need.
+</p>
+
+<hr><a name="report" class="section">
+III. Project Deliverables</a>
+
+<p>
+Here are the tasks/questions that you need to do/answer for this project.
+You may need to perform additional searches online.
+  <ul>
+  <li>(5 points) What is the size of the systolic array and how many
+  multiply-accumulate (MAC) operations can be completed per cycle?
+  What are the sizes of the matrics and how many MAC operations
+  are need to complete the matrix multiplication?
+  Calculate the minimum number of cycles required to
+  complete the matrix multiplication on the systolic array
+  to explain why the cycles reported by Spike are not reasonable.</li>
+  <li>(5 points) What is the number of cycles reported by Verilator?
+  Are there a lot of cycles not spent on MAC operations?
+  Make a reasonable guess on where those cycles are spent.</li>
+  <li>(5 points) Modify the code to increase the sizes of the matrices
+  to 128 by 128. Rebuild the program and run Verilator
+  simulation again. If we define the utilization
+  to be the ratio of the minimum number cycles to the
+  actual number of cycles, do we get better utilization?
+  Make a reasonable guess on why.</li>
+  </ul>
+</p>
+
+<p>
+Complete the above tasks/questions for a total of 15 points.
+Write a project report in .doc/.docs or .pdf format,
+include screenshots as need,
+and submit it to Canvas before the deadline.
+</p>
+
+  </body>
+</html>
